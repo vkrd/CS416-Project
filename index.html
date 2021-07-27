@@ -10,7 +10,7 @@
 <style> circle {fill: lightblue; stroke: black;} </style>
 <body onload='init()'>
     <div style="background-color:#1DA1F2;height: 90px;">
-        <h1 style="color:white;text-align: center;vertical-align: middle;font-size: 70px;line-height: 100%;">How Elon Musk Influences Crypto Prices</h1>
+        <h1 style="color:white;text-align: center;vertical-align: middle;font-size: 70px;line-height: 100%;">Does Elon Musk Influence Bitcoin Prices?</h1>
     </div>
     <div style="background-color:#1DA1F2;height: 30px;">
         <h1 style="color:white;text-align: center;vertical-align: middle;font-size: 20px;line-height: 100%;">By Vikram Duvvur</h1>
@@ -96,15 +96,21 @@
         async function next_stage() {
             if (stage == 0) {
                 d3.select("#play-button").text("Play");
-                await drawAnimatedLine(0,64);
+                annotLayer.selectAll("*").remove();
+                await drawAnimatedLine(0,84);
                 await add_annotations();
                 stage++;
             } else if (stage == 1) {
                 console.log("starting stage 2");
-                await drawAnimatedLine(64,133);
+                await drawAnimatedLine(84,117);
                 await add_annotations();
                 stage++;
             } else if (stage == 2) {
+                console.log("starting stage 3");
+                await drawAnimatedLine(117,133);
+                await add_annotations();
+                stage++;
+            } else if (stage == 3) {
                 console.log("starting stage 3");
                 await drawAnimatedLine(133,209);
                 await add_annotations();
@@ -119,10 +125,36 @@
 
         async function add_annotations() {
             console.log("Adding annotations " + stage);
-            if (stage == 0) {
-                
-            } else if (stage == 1) {
-                const annotations = [
+            var annotations = [];
+            if (stage >= 0) {
+                annotations.push(
+                {
+                    note: {
+                        title: "March 24, 2021",
+                        label: "Elon confirms Tesla will take Bitcoin as payment, price slightly dips"
+                    },
+                    x: x(new Date("March 24, 2021")),
+                    y: y(52325.40),
+                    dy: 100,
+                    dx: -100
+                });
+            } 
+
+            if (stage >= 1) { // 
+                annotations.push(
+                {
+                    note: {
+                        title: "April 26, 2021",
+                        label: "Elon says he has not sold any Bitcoin and Tesla only sold a little, price rises by 10.3%"
+                    },
+                    x: x(new Date("April 26, 2021")),
+                    y: y(54020.50),
+                    dy: 100,
+                    dx: 20
+                });
+            }
+            if (stage >= 2) {
+                annotations.push(
                 {
                     note: {
                         title: "May 12, 2021",
@@ -130,17 +162,16 @@
                     },
                     x: x(new Date("May 12, 2021")),
                     y: y(49384.20),
-                    dy: 100,
-                    dx: -100
-                }
-                ];
-
-                // Add annotation to the chart
-                const makeAnnotations = d3.annotation()
-                .annotations(annotations);
-
-                annotLayer.call(makeAnnotations);
+                    dy: -10,
+                    dx: 100
+                });
             }
+
+            // Add annotation to the chart
+            const makeAnnotations = d3.annotation()
+            .annotations(annotations);
+
+            annotLayer.call(makeAnnotations);
         }
 
         </script>
