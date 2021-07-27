@@ -21,7 +21,7 @@
         <button id="play-button" class="btn btn-dark" aria-label="Continue..." style="visibility: hidden" onclick="next_stage()">
             Play
         </button>
-        <svg id="graph" style="display: flex;justify-content: center;display: block; margin: auto" width=600 height=600></svg>
+        <svg onmouseover="drawTooltip(this)" id="graph" style="display: flex;justify-content: center;display: block; margin: auto" width=600 height=600></svg>
     <div>
     
     <script>
@@ -31,18 +31,21 @@
         var y = 0;
         var stage = 0;
         var path = 0;
+        var annotLayer = 0;
+
+        function drawTooltip(x) {
+            console.log(d3.event.pageX)
+        }
 
         async function drawLine(path, start, end) {
             var tmp_data = data.filter(function(d,i){ return i >= start && i<end });
             
-            //var format = d3.time.format("%b %d, %Y");
-            console.log(tmp_data)
             path.datum(tmp_data)
                 .attr("fill", "none")
                 .attr("stroke", "#1DA1F2")
                 .attr("stroke-width", 1.5)
                 .attr("d", d3.line()
-                    .x(function(d,i) { console.log(d.Date); return x(new Date(d.Date)) })
+                    .x(function(d,i) {  return x(new Date(d.Date)) })
                     .y(function(d) { return y(d.Price.replace(",","")) })
                 );
         }
@@ -67,12 +70,17 @@
 
             //x = d3.scaleLinear().domain([0, 210]).range([0,width_c - 2*margin_c]);
             x = d3.scaleTime().domain([new Date("Jan 01, 2021"), new Date("July 25, 2021")]).range([0,width_c - 2*margin_c]);
-            y = d3.scaleLinear().domain([0, 80000]).range([height_c - 2*margin_c,0]);
+            y = d3.scaleLinear().domain([0, 70000]).range([height_c - 2*margin_c,0]);
 
             svg = d3.select("#graph").attr("height", height_c).attr("width", width_c);
             
             path = svg.append("g").attr("transform","translate(" + margin_c + "," + margin_c + ")")
             .append("path");
+
+            annotLayer = svg.append("g")
+            .attr("transform","translate(" + margin_c + "," + margin_c + ")")
+            .attr("class", "annotation-group");
+
             
             svg.append("g")
             .attr("transform","translate("+margin_c+","+margin_c+")")
@@ -80,16 +88,58 @@
 
             svg.append("g")
             .attr("transform","translate("+margin_c+","+ (height_c - margin_c) + ")")
-            .call(d3.axisBottom(x));
+            .call(d3.axisBottom(x).ticks(d3.timeMonth, 1).tickFormat(d3.timeFormat('%b')));
             
-            await drawAnimatedLine(0,100);
-            stage = 1;
+            next_stage();
         }
 
         async function next_stage() {
-            if (stage == 1) {
-                console.log("starting stage 2")
-                await drawAnimatedLine(100,150);
+            if (stage == 0) {
+                d3.select("#play-button").text("Play");
+                await drawAnimatedLine(0,64);
+                await add_annotations();
+                stage++;
+            } else if (stage == 1) {
+                console.log("starting stage 2");
+                await drawAnimatedLine(64,133);
+                await add_annotations();
+                stage++;
+            } else if (stage == 2) {
+                console.log("starting stage 3");
+                await drawAnimatedLine(133,209);
+                await add_annotations();
+                d3.select("#play-button").text("Restart");
+                stage++;
+            } else {
+                stage = 0;
+                next_stage();
+            }
+            
+        }
+
+        async function add_annotations() {
+            console.log("Adding annotations " + stage);
+            if (stage == 0) {
+                
+            } else if (stage == 1) {
+                const annotations = [
+                {
+                    note: {
+                        title: "May 12, 2021",
+                        label: "Elon confirms Tesla no longer accepts Bitcoin, the price drops 12.9% from the previous day's price"
+                    },
+                    x: x(new Date("May 12, 2021")),
+                    y: y(49384.20),
+                    dy: 100,
+                    dx: -100
+                }
+                ];
+
+                // Add annotation to the chart
+                const makeAnnotations = d3.annotation()
+                .annotations(annotations);
+
+                annotLayer.call(makeAnnotations);
             }
         }
 
