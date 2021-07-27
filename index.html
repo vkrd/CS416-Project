@@ -18,10 +18,15 @@
     <br>
     
     <div width="100%">
-        <button id="play-button" class="btn btn-dark" aria-label="Continue..." style="visibility: hidden" onclick="next_stage()">
+        <svg onmouseover="drawTooltip(this)" id="graph" style="display: flex;justify-content: center;display: block; margin: auto" width=600 height=600></svg>
+        <br><br>
+        <button id="play-button" class="btn btn-dark" aria-label="Continue..." style="visibility: hidden;margin:0;
+        position: absolute;
+        left: 50%;
+        -ms-transform: translate(-50%, -90%);
+        transform: translate(-50%, -90%);width:10%" onclick="next_stage()">
             Play
         </button>
-        <svg onmouseover="drawTooltip(this)" id="graph" style="display: flex;justify-content: center;display: block; margin: auto" width=600 height=600></svg>
     <div>
     
     <script>
@@ -70,7 +75,7 @@
 
             //x = d3.scaleLinear().domain([0, 210]).range([0,width_c - 2*margin_c]);
             x = d3.scaleTime().domain([new Date("Jan 01, 2021"), new Date("July 25, 2021")]).range([0,width_c - 2*margin_c]);
-            y = d3.scaleLinear().domain([0, 70000]).range([height_c - 2*margin_c,0]);
+            y = d3.scaleLinear().domain([15000, 70000]).range([height_c - 2*margin_c,0]);
 
             svg = d3.select("#graph").attr("height", height_c).attr("width", width_c);
             
@@ -89,6 +94,20 @@
             svg.append("g")
             .attr("transform","translate("+margin_c+","+ (height_c - margin_c) + ")")
             .call(d3.axisBottom(x).ticks(d3.timeMonth, 1).tickFormat(d3.timeFormat('%b')));
+
+            svg.append("text")
+            .attr("text-anchor", "end")
+            .attr("x", width_c/2 + 16)
+            .attr("y", height_c - margin_c*0.2)
+            .text("Date");
+
+            // Y axis label:
+            svg.append("text")
+                .attr("text-anchor", "end")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 20)
+                .attr("x", -height_c/2 +40)
+                .text("Price (USD)");
             
             next_stage();
         }
@@ -101,18 +120,23 @@
                 await add_annotations();
                 stage++;
             } else if (stage == 1) {
-                console.log("starting stage 2");
+                console.log("starting stage 1");
                 await drawAnimatedLine(84,117);
                 await add_annotations();
                 stage++;
             } else if (stage == 2) {
-                console.log("starting stage 3");
+                console.log("starting stage 2");
                 await drawAnimatedLine(117,133);
                 await add_annotations();
                 stage++;
             } else if (stage == 3) {
                 console.log("starting stage 3");
-                await drawAnimatedLine(133,209);
+                await drawAnimatedLine(133,165);
+                await add_annotations();
+                stage++;
+            } else if (stage == 4) {
+                console.log("starting stage 4");
+                await drawAnimatedLine(165,209);
                 await add_annotations();
                 d3.select("#play-button").text("Restart");
                 stage++;
@@ -158,12 +182,25 @@
                 {
                     note: {
                         title: "May 12, 2021",
-                        label: "Elon confirms Tesla no longer accepts Bitcoin, the price drops 12.9% from the previous day's price"
+                        label: "Elon states Tesla no longer accepts Bitcoin, the price drops 12.9% from the previous day's price"
                     },
                     x: x(new Date("May 12, 2021")),
                     y: y(49384.20),
-                    dy: -10,
-                    dx: 100
+                    dy: -50,
+                    dx: 10
+                });
+            }
+            if (stage >= 3) {
+                annotations.push(
+                {
+                    note: {
+                        title: "June 13, 2021",
+                        label: "Elon reiterated Tesla has only sold 10% of their Bitcoin, and will resume Bitcoin transactions when it has greater clean energy usage. Price up 10%"
+                    },
+                    x: x(new Date("June 13, 2021")),
+                    y: y(39022.90),
+                    dy: -80,
+                    dx: 10
                 });
             }
 
