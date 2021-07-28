@@ -18,7 +18,7 @@
     <br>
     
     <div width="100%">
-        <svg onmouseover="drawTooltip(this)" id="graph" style="display: flex;justify-content: center;display: block; margin: auto" width=600 height=600></svg>
+        <svg id="graph" style="display: flex;justify-content: center;display: block; margin: auto" width=600 height=600></svg>
         <br><br>
         <button id="play-button" class="btn btn-dark" aria-label="Continue..." style="visibility: hidden;margin:0;
         position: absolute;
@@ -37,10 +37,11 @@
         var stage = 0;
         var path = 0;
         var annotLayer = 0;
+        var focus = 0;
+        var focusText = 0;
+        var maxPoint = 0;
 
-        function drawTooltip(x) {
-            console.log(d3.event.pageX)
-        }
+        var bisect = d3.bisector(function(d) { return new Date(d.Date); }).left;
 
         async function drawLine(path, start, end) {
             var tmp_data = data.filter(function(d,i){ return i >= start && i<end });
@@ -51,18 +52,20 @@
                 .attr("stroke-width", 1.5)
                 .attr("d", d3.line()
                     .x(function(d,i) {  return x(new Date(d.Date)) })
-                    .y(function(d) { return y(d.Price.replace(",","")) })
+                    .y(function(d) { return y(parseFloat(d.Price.replace(",",""))) })
                 );
         }
 
         async function drawAnimatedLine(start, end) {
             d3.select("#play-button").style("visibility", "hidden");
+            
             var i = start;
             while (i < end) {
                 drawLine(path, 0, i);
                 await new Promise(r => setTimeout(r, 20));
                 i++;
             }
+            maxPoint = end;
             d3.select("#play-button").style("visibility", "visible");
         }
 
@@ -79,8 +82,20 @@
 
             svg = d3.select("#graph").attr("height", height_c).attr("width", width_c);
             
-            path = svg.append("g").attr("transform","translate(" + margin_c + "," + margin_c + ")")
-            .append("path");
+            svg
+            .append('rect')
+            .style("fill", "none")
+            .style("pointer-events", "all")
+            .attr("transform","translate(" + margin_c + "," + margin_c + ")")
+            .attr('width', width_c)
+            .attr('height', height_c)
+            .on('mouseover', mouseover)
+            .on('mousemove', mousemove)
+            .on('mouseout', mouseout);
+            
+            graph = svg.append("g").attr("transform","translate(" + margin_c + "," + margin_c + ")");
+            
+            path = graph.append("path");
 
             annotLayer = svg.append("g")
             .attr("transform","translate(" + margin_c + "," + margin_c + ")")
@@ -109,6 +124,34 @@
                 .attr("x", -height_c/2 +40)
                 .text("Price (USD)");
             
+                          // Create the circle that travels along the curve of chart
+        focus = svg
+        
+            .append('g')
+            .append('circle')
+            .style("fill", "none")
+            .attr("transform","translate(" + margin_c + "," + margin_c + ")")
+            .attr("stroke", "grey")
+            .attr('r', 8.5)
+            .style("opacity", 0);
+
+        // Create the text that travels along the curve of chart
+        focusText = svg
+            .append('g')
+            .append('text')
+            .style("opacity", 0)
+            .attr("transform","translate(" + margin_c + "," + margin_c + ")")
+            .attr("text-anchor", "left")
+            .attr("alignment-baseline", "middle");
+
+        focusText2 = svg
+            .append('g')
+            .append('text')
+            .style("opacity", 0)
+            .attr("transform","translate(" + margin_c + "," + margin_c + ")")
+            .attr("text-anchor", "left")
+            .attr("alignment-baseline", "middle");
+
             next_stage();
         }
 
@@ -142,6 +185,7 @@
                 stage++;
             } else {
                 stage = 0;
+                maxPoint = 0;
                 next_stage();
             }
             
@@ -157,6 +201,10 @@
                         title: "March 24, 2021",
                         label: "Elon confirms Tesla will take Bitcoin as payment, price slightly dips"
                     },
+                    connector: {
+                        end: "dot",        // Can be none, or arrow or dot
+                        type: "line"
+                    },
                     x: x(new Date("March 24, 2021")),
                     y: y(52325.40),
                     dy: 100,
@@ -171,6 +219,10 @@
                         title: "April 26, 2021",
                         label: "Elon says he has not sold any Bitcoin and Tesla only sold a little, price rises by 10.3%"
                     },
+                    connector: {
+                        end: "dot",        // Can be none, or arrow or dot
+                        type: "line"
+                    },
                     x: x(new Date("April 26, 2021")),
                     y: y(54020.50),
                     dy: 100,
@@ -183,6 +235,10 @@
                     note: {
                         title: "May 12, 2021",
                         label: "Elon states Tesla no longer accepts Bitcoin, the price drops 12.9% from the previous day's price"
+                    },
+                    connector: {
+                        end: "dot",        // Can be none, or arrow or dot
+                        type: "line"
                     },
                     x: x(new Date("May 12, 2021")),
                     y: y(49384.20),
@@ -197,6 +253,10 @@
                         title: "June 13, 2021",
                         label: "Elon reiterated Tesla has only sold 10% of their Bitcoin, and will resume Bitcoin transactions when it has greater clean energy usage. Price up 10%"
                     },
+                    connector: {
+                        end: "dot",        // Can be none, or arrow or dot
+                        type: "line"
+                    },
                     x: x(new Date("June 13, 2021")),
                     y: y(39022.90),
                     dy: -80,
@@ -209,6 +269,54 @@
             .annotations(annotations);
 
             annotLayer.call(makeAnnotations);
+
+            annotLayer.selectAll(".connector")
+            //.attr('stroke', "blue")
+            .style("stroke-dasharray", ("3, 3"));
+        }
+
+        function mouseover() {
+            focus.style("opacity", 1)
+            focusText.style("opacity",1)
+            focusText2.style("opacity",1)
+        }
+
+        function mousemove() {
+            // recover coordinate we need
+            var x0 = x.invert(d3.mouse(this)[0]);
+            var i = bisect(data, x0, 1);
+                if (i < maxPoint-1) {
+                    focus.style("opacity", 1)
+                    focusText.style("opacity",1)
+                    focusText2.style("opacity",1)
+
+                    selectedData = data[i];
+
+                    focus
+                    .attr("cx", x(new Date(selectedData.Date)))
+                    .attr("cy", y(parseFloat(selectedData.Price.replace(",",""))));
+
+                    console.log(y(selectedData.Price.replace(",","")));
+
+                    focusText
+                    .html((new Date(selectedData.Date)).toLocaleDateString("en-US"))
+                    .attr("x", x(new Date(selectedData.Date))+15)
+                    .attr("y", y(parseFloat(selectedData.Price.replace(",",""))));
+
+                    focusText2
+                    .html("$" + selectedData.Price)
+                    .attr("x", x(new Date(selectedData.Date))+5)
+                    .attr("y", y(parseFloat(selectedData.Price.replace(",","")))+20);
+                } else {
+                    focus.style("opacity", 0)
+                    focusText.style("opacity",0)
+                    focusText2.style("opacity",0)
+                }
+            }
+        function mouseout() {
+            focus.style("opacity", 0)
+            focusText.style("opacity", 0)
+            focusText2.style("opacity", 0)
         }
 
         </script>
