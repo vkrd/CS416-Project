@@ -83,17 +83,6 @@
 
             svg = d3.select("#graph").attr("height", height_c).attr("width", width_c);
             
-            svg
-            .append('rect')
-            .style("fill", "none")
-            .style("pointer-events", "all")
-            .attr("transform","translate(" + margin_c + "," + margin_c + ")")
-            .attr('width', width_c)
-            .attr('height', height_c)
-            .on('mouseover', mouseover)
-            .on('mousemove', mousemove)
-            .on('mouseout', mouseout);
-            
             graph = svg.append("g").attr("transform","translate(" + margin_c + "," + margin_c + ")");
             
             path = graph.append("path");
@@ -160,6 +149,17 @@
             .attr("text-anchor", "left")
             .text("Hover over the graph for more details")
             .attr("alignment-baseline", "middle");
+
+            svg
+            .append('rect')
+            .style("fill", "none")
+            .style("pointer-events", "all")
+            .attr("transform","translate(" + margin_c + "," + margin_c + ")")
+            .attr('width', width_c)
+            .attr('height', height_c)
+            .on('mouseover', mouseover)
+            .on('mousemove', mousemove)
+            .on('mouseout', mouseout);
 
             next_stage();
         }
@@ -294,8 +294,8 @@
         function mousemove() {
             // recover coordinate we need
             var x0 = x.invert(d3.mouse(this)[0]);
-            var i = bisect(data, x0, 1);
-                if (i < maxPoint-1) {
+            var i = bisect(data, x0, 1) - 1;
+                if (i < maxPoint - 1) {
                     hover.transition().duration(1500).ease(d3.easeLinear).style("opacity", 0);
                     focus.style("opacity", 1)
                     focusText.style("opacity",1)
