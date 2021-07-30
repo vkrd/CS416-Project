@@ -40,6 +40,7 @@
         var focus = 0;
         var focusText = 0;
         var maxPoint = 0;
+        var hover = 0;
 
         var bisect = d3.bisector(function(d) { return new Date(d.Date); }).left;
 
@@ -150,6 +151,14 @@
             .style("opacity", 0)
             .attr("transform","translate(" + margin_c + "," + margin_c + ")")
             .attr("text-anchor", "left")
+            .attr("alignment-baseline", "middle");
+
+        hover = svg.append('g')
+            .append('text')
+            .style("opacity", 1)
+            .attr("transform","translate(" + margin_c*1.2 + "," + margin_c*1.2 + ")")
+            .attr("text-anchor", "left")
+            .text("Hover over the graph for more details")
             .attr("alignment-baseline", "middle");
 
             next_stage();
@@ -279,6 +288,7 @@
             focus.style("opacity", 1)
             focusText.style("opacity",1)
             focusText2.style("opacity",1)
+            
         }
 
         function mousemove() {
@@ -286,6 +296,7 @@
             var x0 = x.invert(d3.mouse(this)[0]);
             var i = bisect(data, x0, 1);
                 if (i < maxPoint-1) {
+                    hover.transition().duration(1500).ease(d3.easeLinear).style("opacity", 0);
                     focus.style("opacity", 1)
                     focusText.style("opacity",1)
                     focusText2.style("opacity",1)
